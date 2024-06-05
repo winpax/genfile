@@ -31,7 +31,10 @@ struct Args {
 // The size of each chunk in bytes
 const CHUNK_SIZE: u64 = 4096;
 // Larger chunks are faster to generate for random data, because we use a thread pool to generate them
-const RAND_CHUNK_SIZE: u64 = 4096 * 256;
+#[cfg(unix)]
+const RAND_CHUNK_SIZE: u64 = CHUNK_SIZE * 256;
+#[cfg(windows)]
+const RAND_CHUNK_SIZE: u64 = CHUNK_SIZE;
 
 const BLANK_CHUNK: [u8; CHUNK_SIZE as usize] = [0; CHUNK_SIZE as usize];
 // const BLANK_RAND_CHUNK: [u8; RAND_CHUNK_SIZE as usize] = [0; RAND_CHUNK_SIZE as usize];
