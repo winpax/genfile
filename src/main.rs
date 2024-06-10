@@ -4,8 +4,9 @@ use std::{
     path::PathBuf,
 };
 
+mod size;
+
 use clap::Parser;
-use human_size::{Kilobyte, SpecificSize};
 use indicatif::ProgressBar;
 
 #[derive(Debug, Parser)]
@@ -15,7 +16,7 @@ struct Args {
         long,
         help = "The size of the output file. (Will be rounded to the nearest kilobyte)"
     )]
-    size: SpecificSize<Kilobyte>,
+    size: size::Size,
 
     #[clap(
         short,
