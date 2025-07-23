@@ -4,6 +4,7 @@ name = "genfile"
 version = "0.1.0"
 
 [dependencies]
+arrayvec = "0.7.6"
 clap = { version = "4.5", features = ["derive"] }
 indicatif = "0.17"
 rand = { version = "0.9", features = ["nightly", "simd_support"] }

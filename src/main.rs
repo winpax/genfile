@@ -6,6 +6,7 @@ use std::{
 
 mod size;
 
+use arrayvec::ArrayVec;
 use clap::Parser;
 use indicatif::ProgressBar;
 
@@ -40,14 +41,12 @@ const RAND_CHUNK_SIZE: u64 = CHUNK_SIZE;
 const BLANK_CHUNK: [u8; CHUNK_SIZE as usize] = [0; CHUNK_SIZE as usize];
 // const BLANK_RAND_CHUNK: [u8; RAND_CHUNK_SIZE as usize] = [0; RAND_CHUNK_SIZE as usize];
 
-fn rand_bytes(size: u64) -> Vec<u8> {
-    let mut bytes = vec![0; size as usize];
+fn rand_bytes(remainder: &mut ArrayVec<u8, { CHUNK_SIZE as usize }>, size: u64) {
+    unsafe { remainder.set_len(size as usize) };
 
-    bytes.iter_mut().for_each(|byte| {
+    remainder.iter_mut().for_each(|byte| {
         *byte = rand::random();
     });
-
-    bytes
 }
 
 unsafe fn rand_chunk() -> [u8; RAND_CHUNK_SIZE as usize] {
@@ -93,12 +92,21 @@ fn main() {
     }
 
     if remainder > 0 {
-        file.write_all(&if args.random {
-            rand_bytes(remainder)
+        let mut remainder_vec =
+            const { arrayvec::ArrayVec::<u8, { CHUNK_SIZE as usize }>::new_const() };
+
+        if args.random {
+            rand_bytes(&mut remainder_vec, remainder);
         } else {
-            vec![0; remainder as usize]
-        })
-        .unwrap();
+            remainder_vec.extend(std::iter::repeat_n(0, remainder as usize));
+        }
+
+        assert_eq!(
+            remainder_vec.len(),
+            remainder as usize,
+            "Remainder size does not match the expected size"
+        );
+        file.write_all(&remainder_vec).unwrap();
 
         progress.inc(1);
     }
