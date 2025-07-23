@@ -9,3 +9,9 @@ indicatif = "0.17"
 rand = { version = "0.9", features = ["nightly", "simd_support"] }
 rayon = "1.10"
 thiserror = "2.0"
+
+[profile.release]
+strip = true
+lto = true
+codegen-units = 1
+panic = "unwind"
