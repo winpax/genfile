@@ -1,5 +1,6 @@
 use std::{
-    io::Write,
+    fs::File,
+    io::{BufWriter, Write},
     mem::{transmute, MaybeUninit},
     path::PathBuf,
 };
@@ -32,7 +33,7 @@ struct Args {
 
 // The size of each chunk in bytes
 const CHUNK_SIZE: u64 = 4096;
-// Larger chunks are faster to generate for random data, because we use a thread pool to generate them
+// Larger chunks are faster to generate for random data
 #[cfg(unix)]
 const RAND_CHUNK_SIZE: u64 = CHUNK_SIZE * 256;
 #[cfg(windows)]
@@ -78,15 +79,16 @@ fn main() {
 
     let progress = ProgressBar::new(chunks + 1);
 
-    let mut file = std::fs::File::create(args.output.clone()).unwrap();
+    let file = File::create(args.output.clone()).unwrap();
+    let mut writer = BufWriter::with_capacity(chunk_size as usize, file);
 
     for _ in 0..chunks {
-        if args.random {
-            file.write_all(&unsafe { rand_chunk() })
+        let chunk = if args.random {
+            &unsafe { rand_chunk() }
         } else {
-            file.write_all(&BLANK_CHUNK)
-        }
-        .unwrap();
+            (&BLANK_CHUNK) as &[u8]
+        };
+        writer.write_all(chunk).unwrap();
 
         progress.inc(1);
     }
@@ -106,10 +108,12 @@ fn main() {
             remainder as usize,
             "Remainder size does not match the expected size"
         );
-        file.write_all(&remainder_vec).unwrap();
+        writer.write_all(&remainder_vec).unwrap();
 
         progress.inc(1);
     }
+
+    writer.flush().unwrap();
 
     progress.finish();
 }
